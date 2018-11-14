@@ -12,7 +12,7 @@ from setuptools import setup
 setup(
     name="spectral",
     version="0.1",
-    description="PyTorch cbased trainable spectral linear layers",
+    description="PyTorch based trainable spectral linear layers",
     author="Angela Botros & Narayan Schuetz",
     author_email="narayan.schuetz@artorg.unibe.ch",
     license="MIT",

@@ -64,16 +64,17 @@ def build_base_matrix_1d_cos_II(signal_length):
 
 class Spectral1dBase(nn.Module):
 
-    def __init__(self, in_features, fixed, base_matrix_builder):
+    def __init__(self, in_features, fixed, base_matrix_builder=None):
         """
         Defines base for linear 1d spectral transformation layers.
         :param in_features: the number of input features (signal length)
         :type in_features: int
         :param fixed: whether the layer should be fixed or not
         :type fixed: bool
-        :param base_matrix_builder: a function that can be used to create a base matrix need to build the weight tensors
+        :param base_matrix_builder: a function that can be used to create a base matrix. Helps build the weight tensors.
         :type base_matrix_builder: function
         """
+        super().__init__()
         self.register_parameter('bias', None)   # is this necessary?
         self.in_features = in_features
         self.base_matrix_builder = base_matrix_builder
