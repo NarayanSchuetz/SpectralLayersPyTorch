@@ -1,6 +1,6 @@
 The MIT License
 
-Copyright (c) 2018 University of Berne, http://www.artorg.unibe.ch
+Copyright (c) 2018 University of Bern, http://www.artorg.unibe.ch
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
