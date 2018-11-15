@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: spectral
+Version: 0.1
+Summary: PyTorch based trainable spectral linear layers
+Home-page: UNKNOWN
+Author: Angela Botros & Narayan Schuetz
+Author-email: narayan.schuetz@artorg.unibe.ch
+License: MIT
+Description: UNKNOWN
+Platform: UNKNOWN

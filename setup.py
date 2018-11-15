@@ -11,7 +11,7 @@ from setuptools import setup
 
 setup(
     name="spectral",
-    version="0.1",
+    version="0.2",
     description="PyTorch based trainable spectral linear layers",
     author="Angela Botros & Narayan Schuetz",
     author_email="narayan.schuetz@artorg.unibe.ch",

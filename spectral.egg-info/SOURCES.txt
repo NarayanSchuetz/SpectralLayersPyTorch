@@ -1,0 +1,9 @@
+spectral/__init__.py
+spectral/layers1d.py
+spectral/layers2d.py
+spectral.egg-info/PKG-INFO
+spectral.egg-info/SOURCES.txt
+spectral.egg-info/dependency_links.txt
+spectral.egg-info/not-zip-safe
+spectral.egg-info/requires.txt
+spectral.egg-info/top_level.txt

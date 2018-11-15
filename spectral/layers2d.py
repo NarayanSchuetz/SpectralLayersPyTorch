@@ -13,7 +13,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Spectral2dBase(nn.module):
+class Spectral2dBase(nn.Module):
 
     def __init__(self, nrows, ncols, fixed):
         """
@@ -56,7 +56,6 @@ class Fft2d(Spectral2dBase):
         self.weights_imag2 = nn.Parameter(imag_tensor2, requires_grad=self.requires_grad)
 
     def create_weight_tensors(self, signal_length):
-
         n = np.arange(0, signal_length, 1, dtype=np.float32)
         X = np.asmatrix(np.tile(n, (signal_length, 1)))
         f = np.asmatrix(np.arange(0, signal_length, dtype=np.float32))

@@ -8,3 +8,4 @@
 
 from .layers1d import NaiveDct1d, NaiveDst1d, DctII1d, Fft1d
 from .layers1d import iDctII1d, iFft1d
+from .layers2d import Fft2d
