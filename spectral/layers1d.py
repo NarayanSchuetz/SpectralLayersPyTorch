@@ -1,7 +1,7 @@
 """
  Created by Narayan Schuetz at 13/11/2018
  University of Bern
- 
+
  This file is subject to the terms and conditions defined in
  file 'LICENSE.txt', which is part of this source code package.
 """
@@ -21,7 +21,7 @@ from .util import build_base_matrix_1d, build_base_matrix_1d_cos_II
 
 class Spectral1dBase(nn.Module):
 
-    def __init__(self, in_features, fixed, base_matrix_builder=None):
+    def __init__(self, in_features, fixed, base_matrix_builder=None, modus='amp'):
         """
         Defines base for linear 1d spectral transformation layers.
         :param in_features: the number of input features (signal length)
@@ -30,12 +30,17 @@ class Spectral1dBase(nn.Module):
         :type fixed: bool
         :param base_matrix_builder: a function that can be used to create a base matrix. Helps build the weight tensors.
         :type base_matrix_builder: function
+        :param modus: whether amplitude/phase or real/imag signal should be returned
+        :type modus: str
+                modus='amp':     returns amplitude and phase of signal
+                modus='complex': returns complex signal output of fourier transformation
         """
         super().__init__()
         self.register_parameter('bias', None)   # is this necessary?
         self.in_features = in_features
         self.base_matrix_builder = base_matrix_builder
         self.requires_grad = not fixed
+        self.modus = modus
 
     def forward(self, input):
         return F.linear(input, self.weights)
@@ -104,9 +109,18 @@ class Fft1d(Spectral1dBase):
         T_imag = torch.tensor(np.sin(X_base), dtype=torch.float32)
         return T_real, T_imag
 
-    def forward(self, input):
-        return torch.cat((F.linear(input, self.weights_real), F.linear(input, self.weights_imag)), -1)
+    def create_amplitude_phase(self):
+        self.amp   = torch.sqrt(self.real**2 + self.imag**2)
+        self.phase = torch.atan2(self.imag, self.real)
 
+    def forward(self, input):
+        self.real = F.linear(input, self.weights_real)
+        self.imag = F.linear(input, self.weights_imag)
+        if self.modus = 'complex':
+            return torch.cat((self.real, self.imag), -1)
+        elif self.modus = 'amp':
+            create_amplitude_phase()
+            return torch.cat((self.amp, self.phase), -1)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # inverse linear transformation layers
@@ -178,6 +192,10 @@ class iFft1d(Spectral1dBase):
         X_i = 1 / signal_length * np.sin(X)
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
+
+    def create_complex(self):
+        # TODO: calculate real/imag from amplitude/phase
+        return True
 
     def forward(self, input):
         return torch.cat((F.linear(input, self.weights_real), F.linear(input, self.weights_imag)), -1)
