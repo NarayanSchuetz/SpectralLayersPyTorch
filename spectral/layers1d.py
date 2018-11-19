@@ -97,8 +97,8 @@ class Fft1d(Spectral1dBase):
         Dimensionality: the length the input signal is half the output -> n_features_out == 2 x n_features_in
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d):
-        super().__init__(in_features, fixed, base_matrix_builder)
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, modus='amp'):
+        super().__init__(in_features, fixed, base_matrix_builder, modus)
         T_real, T_imag = self.create_weight_tensors()
         self.weights_real = nn.Parameter(T_real, requires_grad=self.requires_grad)
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
