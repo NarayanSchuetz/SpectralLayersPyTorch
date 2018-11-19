@@ -1,7 +1,7 @@
 """
  Created by Narayan Schuetz at 14/11/2018
  University of Bern
- 
+
  This file is subject to the terms and conditions defined in
  file 'LICENSE.txt', which is part of this source code package.
 """
@@ -15,7 +15,7 @@ import torch.nn.functional as F
 
 class Spectral2dBase(nn.Module):
 
-    def __init__(self, nrows, ncols, fixed):
+    def __init__(self, nrows, ncols, fixed, modus='amp'):
         """
         :param nrows: the number of rows of the 2d input (y dimension)
         :type nrows: int
@@ -28,6 +28,7 @@ class Spectral2dBase(nn.Module):
         self.nrows = nrows
         self.ncols = ncols
         self.requires_grad = not fixed
+        self.modus = modus
         self.register_parameter('bias', None)
 
     def extra_repr(self):
@@ -46,8 +47,8 @@ class Fft2d(Spectral2dBase):
     x-axis but double the y-axis of the input -> input: n_x, n_y, output: n_x, 2 x n_y
     """
 
-    def __init__(self, nrows, ncols, fixed=False):
-        super().__init__(nrows, ncols, fixed)
+    def __init__(self, nrows, ncols, fixed=False, modus='amp'):
+        super().__init__(nrows, ncols, fixed, modus)
 
         real_tensor1, imag_tensor1 = self.create_weight_tensors(signal_length=self.nrows)
         real_tensor2, imag_tensor2 = self.create_weight_tensors(signal_length=self.ncols)
@@ -72,6 +73,11 @@ class Fft2d(Spectral2dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
+    def create_amplitude_phase(self):
+        self.amp   = torch.sqrt(self.real**2 + self.imag**2)
+        self.phase = torch.atan2(self.imag, self.real)
+        return True
+
     def forward(self, input):
 
         c1 = F.linear(input, self.weights_real1)
@@ -83,7 +89,14 @@ class Fft2d(Spectral2dBase):
         imag_part = F.linear(torch.transpose(c1, -1, -2), self.weights_imag2) + \
                     F.linear(torch.transpose(s1, -1, -2), torch.transpose(self.weights_real2, -1, -2))
 
-        return torch.cat((torch.transpose(real_part, -1, -2), torch.transpose(imag_part, -1, -2)), -1)
+        self.real = torch.transpose(real_part, -1, -2)
+        self.imag = torch.transpose(imag_part, -1, -2)
+
+        if self.modus = 'complex':
+            return torch.cat((self.real, self.imag), -1)
+        elif self.modus = 'amp':
+            create_amplitude_phase()
+            return torch.cat((self.amp, self.phase), -1)
 
 
 class DctII2d(Spectral2dBase):
@@ -212,6 +225,3 @@ class iDctII2d(Spectral2dBase):
     def forward(self, input):
         x = F.linear(torch.transpose(input, -2, -1), self.weights_1)
         return F.linear(torch.transpose(x, -2, -1), self.weights_2)
-
-
-

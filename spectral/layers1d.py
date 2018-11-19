@@ -112,6 +112,7 @@ class Fft1d(Spectral1dBase):
     def create_amplitude_phase(self):
         self.amp   = torch.sqrt(self.real**2 + self.imag**2)
         self.phase = torch.atan2(self.imag, self.real)
+        return True
 
     def forward(self, input):
         self.real = F.linear(input, self.weights_real)
