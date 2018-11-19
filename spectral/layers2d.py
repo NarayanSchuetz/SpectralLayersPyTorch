@@ -143,8 +143,8 @@ class iFft2d(Spectral2dBase):
     where the transform will be applied to - as is usually the case in PyTorch.
     """
 
-    def __init__(self, nrows, ncols, fixed=False, amplitude=False):
-        super().__init__(nrows, ncols, fixed)
+    def __init__(self, nrows, ncols, fixed=False, amplitude=False, modus='complex'):
+        super().__init__(nrows, ncols, fixed, modus)
 
         self.amplitude = amplitude
 
@@ -169,13 +169,26 @@ class iFft2d(Spectral2dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
+    def create_complex(self):
+        self.amp   = input[:self.nrows]
+        self.phase = input[self.nrows:]
+
+        self.real = self.amp * torch.cos(self.phase)
+        self.imag = self.amp * torch.sin(self.phase)
+        return True
+
     def forward(self, input):
+        if modus = 'amp':
+            create_complex()
+        elif modus = 'complex':
+            self.real = input[:self.nrows]
+            self.imag = input[self.nrows:]
 
-        c1_real = F.linear(input[:self.nrows], self.weights_real_1)
-        c1_imag = F.linear(input[self.nrows:], self.weights_real_1)
+        c1_real = F.linear(self.real, self.weights_real_1)
+        c1_imag = F.linear(self.imag, self.weights_real_1)
 
-        s1_real = F.linear(input[:self.nrows], self.weights_imag_1)
-        s1_imag = F.linear(input[self.nrows:], self.weights_imag_1)
+        s1_real = F.linear(self.real, self.weights_imag_1)
+        s1_imag = F.linear(self.imag, self.weights_imag_1)
 
         real_part = F.linear(torch.transpose(c1_real, -1, -2), self.weights_real_2) - \
                     F.linear(torch.transpose(s1_real, -1, -2), self.weights_imag_2) - \

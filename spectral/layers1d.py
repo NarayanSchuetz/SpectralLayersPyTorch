@@ -171,8 +171,8 @@ class iFft1d(Spectral1dBase):
     Dimensionality: the length of the input is double the size of the output -> n_features_in x 2 == n_features_out.
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=None):
-        super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder)
+    def __init__(self, in_features, fixed=False, base_matrix_builder=None, modus='complex'):
+        super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder, modus)
         T_real, T_imag = self.create_weight_tensors()
         self.weights_real = nn.Parameter(T_real, requires_grad=self.requires_grad)
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
@@ -195,8 +195,21 @@ class iFft1d(Spectral1dBase):
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
     def create_complex(self):
-        # TODO: calculate real/imag from amplitude/phase
+        self.amp   = input[:self.nrows]
+        self.phase = input[self.nrows:]
+
+        self.real = self.amp * torch.cos(self.phase)
+        self.imag = self.amp * torch.sin(self.phase)
         return True
 
     def forward(self, input):
-        return torch.cat((F.linear(input, self.weights_real), F.linear(input, self.weights_imag)), -1)
+        if modus = 'amp':
+            create_complex()
+        elif modus = 'complex':
+            self.real = input[:self.nrows]
+            self.imag = input[self.nrows:]
+
+        real_part = F.linear(self.real, self.weights_real) - F.linear(self.imag, self.weights_imag)
+        imag_part = F.linear(self.real, self.weights_imag) + F.linear(self.imag, self.weights_real)
+
+        return torch.cat((real_part, imag_part), -1)
