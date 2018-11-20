@@ -21,7 +21,7 @@ from .util import build_base_matrix_1d, build_base_matrix_1d_cos_II
 
 class Spectral1dBase(nn.Module):
 
-    def __init__(self, in_features, fixed, base_matrix_builder=None, modus='amp'):
+    def __init__(self, in_features, fixed, base_matrix_builder=None):
         """
         Defines base for linear 1d spectral transformation layers.
         :param in_features: the number of input features (signal length)
@@ -40,7 +40,6 @@ class Spectral1dBase(nn.Module):
         self.in_features = in_features
         self.base_matrix_builder = base_matrix_builder
         self.requires_grad = not fixed
-        self.modus = modus
 
     def forward(self, input):
         return F.linear(input, self.weights)
@@ -57,9 +56,9 @@ class NaiveDst1d(Spectral1dBase):
 
     def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d):
         super().__init__(in_features, fixed, base_matrix_builder)
-        self.weights = nn.Parameter(self.create_weight_tensor(), requires_grad=self.requires_grad)
+        self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
-    def create_weight_tensor(self):
+    def _create_weight_tensor(self):
         X_base = self.base_matrix_builder(self.in_features)
         X = np.sin(X_base)
         return torch.tensor(X, dtype=torch.float32)
@@ -73,9 +72,9 @@ class NaiveDct1d(Spectral1dBase):
 
     def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d):
         super().__init__(in_features, fixed, base_matrix_builder)
-        self.weights = nn.Parameter(self.create_weight_tensor(), requires_grad=self.requires_grad)
+        self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
-    def create_weight_tensor(self):
+    def _create_weight_tensor(self):
         X_base = self.base_matrix_builder(self.in_features)
         X = np.cos(X_base)
         return torch.tensor(X, dtype=torch.float32)
@@ -97,31 +96,42 @@ class Fft1d(Spectral1dBase):
         Dimensionality: the length the input signal is half the output -> n_features_out == 2 x n_features_in
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, modus='amp'):
-        super().__init__(in_features, fixed, base_matrix_builder, modus)
-        T_real, T_imag = self.create_weight_tensors()
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp'):
+        super().__init__(in_features, fixed, base_matrix_builder)
+
+        self.mode = mode
+
+        self._imag = None
+        self._real = None
+        self._amp = None
+        self._phase = None
+
+        T_real, T_imag = self._create_weight_tensors()
         self.weights_real = nn.Parameter(T_real, requires_grad=self.requires_grad)
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
 
-    def create_weight_tensors(self):
+    def _create_weight_tensors(self):
         X_base = self.base_matrix_builder(self.in_features)
         T_real = torch.tensor(np.cos(X_base), dtype=torch.float32)
         T_imag = torch.tensor(np.sin(X_base), dtype=torch.float32)
         return T_real, T_imag
 
-    def create_amplitude_phase(self):
-        self.amp   = torch.sqrt(self.real**2 + self.imag**2)
-        self.phase = torch.atan2(self.imag, self.real)
-        return True
+    def _create_amplitude_phase(self):
+        self._amp   = torch.sqrt(self._real ** 2 + self._imag ** 2)
+        self._phase = torch.atan2(self._imag, self._real)
 
     def forward(self, input):
-        self.real = F.linear(input, self.weights_real)
-        self.imag = F.linear(input, self.weights_imag)
-        if self.modus = 'complex':
-            return torch.cat((self.real, self.imag), -1)
-        elif self.modus = 'amp':
-            create_amplitude_phase()
-            return torch.cat((self.amp, self.phase), -1)
+
+        self._real = F.linear(input, self.weights_real)
+        self._imag = F.linear(input, self.weights_imag)
+
+        if self.mode == 'complex':
+            return torch.cat((self._real, self._imag), -1)
+        elif self.modus == 'amp':
+            self._create_amplitude_phase()
+            return torch.cat((self._amp, self._phase), -1)
+        else:
+            raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
 
 # ----------------------------------------------------------------------------------------------------------------------
 # inverse linear transformation layers
@@ -136,9 +146,9 @@ class iDctII1d(Spectral1dBase):
 
     def __init__(self, in_features, fixed=False, base_matrix_builder=None):
         super().__init__(in_features, fixed, base_matrix_builder)
-        self.weights = nn.Parameter(self.create_weight_tensor(), requires_grad=self.requires_grad)
+        self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
-    def create_weight_tensor(self):
+    def _create_weight_tensor(self):
         """
         Generate tensor with coefficients of discrete cosine transformation
         inverse Discrete Cosine Transformation is 2/N * DCT III (x)
@@ -171,13 +181,21 @@ class iFft1d(Spectral1dBase):
     Dimensionality: the length of the input is double the size of the output -> n_features_in x 2 == n_features_out.
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=None, modus='complex'):
-        super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder, modus)
-        T_real, T_imag = self.create_weight_tensors()
+    def __init__(self, in_features, fixed=False, base_matrix_builder=None, mode='complex'):
+        super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder)
+
+        self.mode = mode
+
+        self._real = None
+        self._imag = None
+        self._amp = None
+        self._phase = None
+
+        T_real, T_imag = self._create_weight_tensors()
         self.weights_real = nn.Parameter(T_real, requires_grad=self.requires_grad)
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
 
-    def create_weight_tensors(self):
+    def _create_weight_tensors(self):
 
         signal_length = self.in_features
 
@@ -194,22 +212,25 @@ class iFft1d(Spectral1dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def create_complex(self):
-        self.amp   = input[:self.nrows]
-        self.phase = input[self.nrows:]
+    def _create_complex(self):
+        self._amp   = input[:self.nrows]
+        self._phase = input[self.nrows:]
 
-        self.real = self.amp * torch.cos(self.phase)
-        self.imag = self.amp * torch.sin(self.phase)
+        self._real = self._amp * torch.cos(self._phase)
+        self._imag = self._amp * torch.sin(self._phase)
         return True
 
     def forward(self, input):
-        if modus = 'amp':
-            create_complex()
-        elif modus = 'complex':
-            self.real = input[:self.nrows]
-            self.imag = input[self.nrows:]
 
-        real_part = F.linear(self.real, self.weights_real) - F.linear(self.imag, self.weights_imag)
-        imag_part = F.linear(self.real, self.weights_imag) + F.linear(self.imag, self.weights_real)
+        if self.mode == 'amp':
+            self._create_complex()
+        elif self.mode == 'complex':
+            self._real = input[:self.nrows]
+            self._imag = input[self.nrows:]
+        else:
+            raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
+
+        real_part = F.linear(self._real, self.weights_real) - F.linear(self._imag, self.weights_imag)
+        imag_part = F.linear(self._real, self.weights_imag) + F.linear(self._imag, self.weights_real)
 
         return torch.cat((real_part, imag_part), -1)

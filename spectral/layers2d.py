@@ -197,6 +197,10 @@ class iFft2d(Spectral2dBase):
             self._real = input[:self.nrows]
             self._imag = input[self.nrows:]
 
+        else:
+            raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
+
+
         c1_real = F.linear(self._real, self.weights_real_1)
         c1_imag = F.linear(self._imag, self.weights_real_1)
 
