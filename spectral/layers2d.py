@@ -15,7 +15,7 @@ import torch.nn.functional as F
 
 class Spectral2dBase(nn.Module):
 
-    def __init__(self, nrows, ncols, fixed, modus='amp'):
+    def __init__(self, nrows, ncols, fixed):
         """
         :param nrows: the number of rows of the 2d input (y dimension)
         :type nrows: int
@@ -28,7 +28,6 @@ class Spectral2dBase(nn.Module):
         self.nrows = nrows
         self.ncols = ncols
         self.requires_grad = not fixed
-        self.modus = modus
         self.register_parameter('bias', None)
 
     def extra_repr(self):
@@ -47,11 +46,18 @@ class Fft2d(Spectral2dBase):
     x-axis but double the y-axis of the input -> input: n_x, n_y, output: n_x, 2 x n_y
     """
 
-    def __init__(self, nrows, ncols, fixed=False, modus='amp'):
-        super().__init__(nrows, ncols, fixed, modus)
+    def __init__(self, nrows, ncols, fixed=False, mode='amp'):
+        super().__init__(nrows, ncols, fixed)
 
-        real_tensor1, imag_tensor1 = self.create_weight_tensors(signal_length=self.nrows)
-        real_tensor2, imag_tensor2 = self.create_weight_tensors(signal_length=self.ncols)
+        self.mode = mode
+
+        self._amp = None
+        self._phase = None
+        self._real = None
+        self._imag = None
+
+        real_tensor1, imag_tensor1 = self._create_weight_tensors(signal_length=self.nrows)
+        real_tensor2, imag_tensor2 = self._create_weight_tensors(signal_length=self.ncols)
 
         self.weights_real1 = nn.Parameter(real_tensor1, requires_grad=self.requires_grad)
         self.weights_real2 = nn.Parameter(real_tensor2, requires_grad=self.requires_grad)
@@ -59,7 +65,8 @@ class Fft2d(Spectral2dBase):
         self.weights_imag1 = nn.Parameter(imag_tensor1, requires_grad=self.requires_grad)
         self.weights_imag2 = nn.Parameter(imag_tensor2, requires_grad=self.requires_grad)
 
-    def create_weight_tensors(self, signal_length):
+    def _create_weight_tensors(self, signal_length):
+
         n = np.arange(0, signal_length, 1, dtype=np.float32)
         X = np.asmatrix(np.tile(n, (signal_length, 1)))
         f = np.asmatrix(np.arange(0, signal_length, dtype=np.float32))
@@ -73,10 +80,9 @@ class Fft2d(Spectral2dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def create_amplitude_phase(self):
-        self.amp   = torch.sqrt(self.real**2 + self.imag**2)
-        self.phase = torch.atan2(self.imag, self.real)
-        return True
+    def _create_amplitude_phase(self):
+        self._amp   = torch.sqrt(self._real ** 2 + self._imag ** 2)
+        self._phase = torch.atan2(self._imag, self._real)
 
     def forward(self, input):
 
@@ -89,14 +95,16 @@ class Fft2d(Spectral2dBase):
         imag_part = F.linear(torch.transpose(c1, -1, -2), self.weights_imag2) + \
                     F.linear(torch.transpose(s1, -1, -2), torch.transpose(self.weights_real2, -1, -2))
 
-        self.real = torch.transpose(real_part, -1, -2)
-        self.imag = torch.transpose(imag_part, -1, -2)
+        self._real = torch.transpose(real_part, -1, -2)
+        self._imag = torch.transpose(imag_part, -1, -2)
 
-        if self.modus = 'complex':
-            return torch.cat((self.real, self.imag), -1)
-        elif self.modus = 'amp':
-            create_amplitude_phase()
-            return torch.cat((self.amp, self.phase), -1)
+        if self.mode == 'complex':
+            return torch.cat((self._real, self._imag), -1)
+        elif self.mode == 'amp':
+            self._create_amplitude_phase()
+            return torch.cat((self._amp, self._phase), -1)
+        else:
+            raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
 
 
 class DctII2d(Spectral2dBase):
@@ -109,10 +117,10 @@ class DctII2d(Spectral2dBase):
     def __init__(self, nrows, ncols, fixed=False):
         super().__init__(nrows, ncols, fixed)
 
-        self.weights_1 = nn.Parameter(self.create_weight_tensor(self.nrows), requires_grad=self.requires_grad)
-        self.weights_2 = nn.Parameter(self.create_weight_tensor(self.ncols), requires_grad=self.requires_grad)
+        self.weights_1 = nn.Parameter(self._create_weight_tensor(self.nrows), requires_grad=self.requires_grad)
+        self.weights_2 = nn.Parameter(self._create_weight_tensor(self.ncols), requires_grad=self.requires_grad)
 
-    def create_weight_tensor(self, signal_length):
+    def _create_weight_tensor(self, signal_length):
         """
         Generate matrix with coefficients of discrete cosine transformation
         Here, DCT II is implemented https://en.wikipedia.org/wiki/Discrete_cosine_transform#DCT-II
@@ -143,20 +151,25 @@ class iFft2d(Spectral2dBase):
     where the transform will be applied to - as is usually the case in PyTorch.
     """
 
-    def __init__(self, nrows, ncols, fixed=False, amplitude=False, modus='complex'):
-        super().__init__(nrows, ncols, fixed, modus)
+    def __init__(self, nrows, ncols, fixed=False, mode='complex'):
+        super().__init__(nrows, ncols, fixed)
 
-        self.amplitude = amplitude
+        self.mode = mode
 
-        real_tensor_1, imag_tensor_1 = self.create_weight_tensors(self.nrows)
+        self._amp = None
+        self._phase = None
+        self._real = None
+        self._imag = None
+
+        real_tensor_1, imag_tensor_1 = self._create_weight_tensors(self.nrows)
         self.weights_real_1 = nn.Parameter(real_tensor_1, requires_grad=self.requires_grad)
         self.weights_imag_1 = nn.Parameter(imag_tensor_1, requires_grad=self.requires_grad)
 
-        real_tensor_2, imag_tensor_2 = self.create_weight_tensors(self.ncols)
+        real_tensor_2, imag_tensor_2 = self._create_weight_tensors(self.ncols)
         self.weights_real_2 = nn.Parameter(real_tensor_2, requires_grad=self.requires_grad)
         self.weights_imag_2 = nn.Parameter(imag_tensor_2, requires_grad=self.requires_grad)
 
-    def create_weight_tensors(self, signal_length):
+    def _create_weight_tensors(self, signal_length):
 
         n = np.arange(0, signal_length, 1, dtype=np.float32)
         X = np.asmatrix(np.tile(n, (signal_length, 1)))
@@ -164,31 +177,31 @@ class iFft2d(Spectral2dBase):
         X_f = np.tile(f.T, (1, signal_length))
         X = np.multiply(X, X_f)
         X = X * ((2 * np.pi) / signal_length)
-        X_r = 1 / (self.in_features_x * self.in_features_y) * np.cos(X)
-        X_i = 1 / (self.in_features_x * self.in_features_y) * np.sin(X)
+        X_r = 1 / (self.nrows * self.ncols) * np.cos(X)
+        X_i = 1 / (self.nrows * self.ncols) * np.sin(X)
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def create_complex(self):
-        self.amp   = input[:self.nrows]
-        self.phase = input[self.nrows:]
+    def _create_complex(self):
+        self._amp   = input[:self.nrows]
+        self._phase = input[self.nrows:]
 
-        self.real = self.amp * torch.cos(self.phase)
-        self.imag = self.amp * torch.sin(self.phase)
+        self._real = self._amp * torch.cos(self._phase)
+        self._imag = self._amp * torch.sin(self._phase)
         return True
 
     def forward(self, input):
-        if modus = 'amp':
-            create_complex()
-        elif modus = 'complex':
-            self.real = input[:self.nrows]
-            self.imag = input[self.nrows:]
+        if self.mode == 'amp':
+            self._create_complex()
+        elif self.mode == 'complex':
+            self._real = input[:self.nrows]
+            self._imag = input[self.nrows:]
 
-        c1_real = F.linear(self.real, self.weights_real_1)
-        c1_imag = F.linear(self.imag, self.weights_real_1)
+        c1_real = F.linear(self._real, self.weights_real_1)
+        c1_imag = F.linear(self._imag, self.weights_real_1)
 
-        s1_real = F.linear(self.real, self.weights_imag_1)
-        s1_imag = F.linear(self.imag, self.weights_imag_1)
+        s1_real = F.linear(self._real, self.weights_imag_1)
+        s1_imag = F.linear(self._imag, self.weights_imag_1)
 
         real_part = F.linear(torch.transpose(c1_real, -1, -2), self.weights_real_2) - \
                     F.linear(torch.transpose(s1_real, -1, -2), self.weights_imag_2) - \
@@ -199,10 +212,6 @@ class iFft2d(Spectral2dBase):
                     F.linear(torch.transpose(s1_real, -1, -2), self.weights_real_2) + \
                     F.linear(torch.transpose(c1_imag, -1, -2), self.weights_real_2) - \
                     F.linear(torch.transpose(s1_imag, -1, -2), self.weights_imag2)
-
-        if self.amplitude:
-            amplitude = lambda a, b: torch.sqrt(a ** 2 + b ** 2)
-            return amplitude(real_part, imag_part)
 
         return torch.cat((torch.transpose(real_part, -1, -2), torch.transpose(imag_part, -1, -2)), -1)
 
@@ -217,10 +226,10 @@ class iDctII2d(Spectral2dBase):
     def __init__(self, nrows, ncols, fixed=False):
         super().__init__(nrows, ncols, fixed)
 
-        self.weights_1 = nn.Parameter(self.create_weight_tensor(self.nrows))
-        self.weights_2 = nn.Parameter(self.create_weight_tensor(self.ncols))
+        self.weights_1 = nn.Parameter(self._create_weight_tensor(self.nrows))
+        self.weights_2 = nn.Parameter(self._create_weight_tensor(self.ncols))
 
-    def create_weight_tensor(self, signal_length):
+    def _create_weight_tensor(self, signal_length):
 
         n = np.arange(0, signal_length, 1, dtype=np.float32)
         X = np.asmatrix(np.tile(n, (signal_length, 1)))
