@@ -215,7 +215,7 @@ class iFft2d(Spectral2dBase):
         imag_part = F.linear(torch.transpose(c1_real, -1, -2), self.weights_imag_2) + \
                     F.linear(torch.transpose(s1_real, -1, -2), self.weights_real_2) + \
                     F.linear(torch.transpose(c1_imag, -1, -2), self.weights_real_2) - \
-                    F.linear(torch.transpose(s1_imag, -1, -2), self.weights_imag2)
+                    F.linear(torch.transpose(s1_imag, -1, -2), self.weights_imag_2)
 
         return torch.cat((torch.transpose(real_part, -1, -2), torch.transpose(imag_part, -1, -2)), -1)
 
