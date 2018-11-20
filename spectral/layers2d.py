@@ -182,9 +182,9 @@ class iFft2d(Spectral2dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def _create_complex(self):
-        self._amp   = input[:self.nrows]
-        self._phase = input[self.nrows:]
+    def _create_complex(self, input):
+        self._amp = input[:,:,:,:self.nrows]
+        self._phase = input[:,:,:,self.nrows:]
 
         self._real = self._amp * torch.cos(self._phase)
         self._imag = self._amp * torch.sin(self._phase)
@@ -192,10 +192,10 @@ class iFft2d(Spectral2dBase):
 
     def forward(self, input):
         if self.mode == 'amp':
-            self._create_complex()
+            self._create_complex(input)
         elif self.mode == 'complex':
-            self._real = input[:self.nrows]
-            self._imag = input[self.nrows:]
+            self._real = input[:,:,:,self.nrows]
+            self._imag = input[:,:,:,self.nrows:]
 
         else:
             raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))

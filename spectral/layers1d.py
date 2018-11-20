@@ -212,7 +212,7 @@ class iFft1d(Spectral1dBase):
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def _create_complex(self):
+    def _create_complex(self, input):
         self._amp   = input[:self.nrows]
         self._phase = input[self.nrows:]
 
@@ -223,7 +223,7 @@ class iFft1d(Spectral1dBase):
     def forward(self, input):
 
         if self.mode == 'amp':
-            self._create_complex()
+            self._create_complex(input)
         elif self.mode == 'complex':
             self._real = input[:self.nrows]
             self._imag = input[self.nrows:]
