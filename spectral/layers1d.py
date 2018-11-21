@@ -82,7 +82,7 @@ class DctII1d(NaiveDct1d):
         (https://en.wikipedia.org/wiki/Discrete_cosine_transform#DCT-II).
         Dimensionality: the length the input signal is the same as the output -> n_features_in == n_features_out
     """
-    def __init__(self, in_features, fixed, base_matrix_builder=build_base_matrix_1d_cos_II):
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d_cos_II):
         super().__init__(in_features, fixed, base_matrix_builder)
 
 
