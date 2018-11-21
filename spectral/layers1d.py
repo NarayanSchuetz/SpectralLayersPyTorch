@@ -30,10 +30,6 @@ class Spectral1dBase(nn.Module):
         :type fixed: bool
         :param base_matrix_builder: a function that can be used to create a base matrix. Helps build the weight tensors.
         :type base_matrix_builder: function
-        :param modus: whether amplitude/phase or real/imag signal should be returned
-        :type modus: str
-                modus='amp':     returns amplitude and phase of signal
-                modus='complex': returns complex signal output of fourier transformation
         """
         super().__init__()
         self.register_parameter('bias', None)   # is this necessary?
@@ -127,7 +123,7 @@ class Fft1d(Spectral1dBase):
 
         if self.mode == 'complex':
             return torch.cat((self._real, self._imag), -1)
-        elif self.modus == 'amp':
+        elif self.mode == 'amp':
             self._create_amplitude_phase()
             return torch.cat((self._amp, self._phase), -1)
         else:
