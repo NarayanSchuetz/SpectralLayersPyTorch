@@ -55,7 +55,7 @@ class NaiveDst1d(Spectral1dBase):
         self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
     def _create_weight_tensor(self):
-        X_base = self.base_matrix_builder(self.in_features)
+        X_base = self.base_matrix_builder(self.in_features, redundance=True)
         X = np.sin(X_base)
         return torch.tensor(X, dtype=torch.float32)
 
@@ -71,7 +71,7 @@ class NaiveDct1d(Spectral1dBase):
         self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
     def _create_weight_tensor(self):
-        X_base = self.base_matrix_builder(self.in_features)
+        X_base = self.base_matrix_builder(self.in_features, redundance=True)
         X = np.cos(X_base)
         return torch.tensor(X, dtype=torch.float32)
 

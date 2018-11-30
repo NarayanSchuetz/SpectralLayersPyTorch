@@ -1,7 +1,7 @@
 """
  Created by Narayan Schuetz at 16/11/2018
  University of Bern
- 
+
  This file is subject to the terms and conditions defined in
  file 'LICENSE.txt', which is part of this source code package.
 """
@@ -10,18 +10,24 @@
 import numpy as np
 
 
-def build_base_matrix_1d(signal_length):
+def build_base_matrix_1d(signal_length, redundance=False):
     """
     Helper function to create base matrix for the one dimensional case of multiple spectral transformations (naive
     sine, cosine and fft).
     :param signal_length: length of the input signal
     :type signal_length: int
+    :param redundance: Returns full DFT (True) or omits redundant part (False)
+    :type redundance: bool
     :return: base matrix
     :rtype: np.matrix
     """
+    if not redundance:
+        signal_out = signal_length // 2
+    else:
+        signal_out = signal_length
     n = np.arange(0, signal_length, 1, dtype=np.float32)
-    X = np.asmatrix(np.tile(n, (signal_length, 1)))
-    f = np.asmatrix(np.arange(0, signal_length, dtype=np.float32))
+    X = np.asmatrix(np.tile(n, (signal_out, 1)))
+    f = np.asmatrix(np.arange(0, signal_out, dtype=np.float32))
     X_f = np.tile(f.T, (1, signal_length))
 
     X = np.multiply(X, X_f)
