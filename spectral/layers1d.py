@@ -55,7 +55,7 @@ class NaiveDst1d(Spectral1dBase):
         self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
     def _create_weight_tensor(self):
-        X_base = self.base_matrix_builder(self.in_features, redundance=True)
+        X_base = self.base_matrix_builder(self.in_features, redundance=True, forward=True)
         X = np.sin(X_base)
         return torch.tensor(X, dtype=torch.float32)
 
@@ -71,7 +71,7 @@ class NaiveDct1d(Spectral1dBase):
         self.weights = nn.Parameter(self._create_weight_tensor(), requires_grad=self.requires_grad)
 
     def _create_weight_tensor(self):
-        X_base = self.base_matrix_builder(self.in_features, redundance=True)
+        X_base = self.base_matrix_builder(self.in_features, redundance=True, forward=True)
         X = np.cos(X_base)
         return torch.tensor(X, dtype=torch.float32)
 
@@ -86,16 +86,17 @@ class DctII1d(NaiveDct1d):
         super().__init__(in_features, fixed, base_matrix_builder)
 
 
-class Fft1d(Spectral1dBase):
+class Dft1d(Spectral1dBase):
     """
-        Linear layer with weights initialized as a one dimensional discrete fast fourier transform.
+        Linear layer with weights initialized as a one dimensional discrete fourier transform.
         Dimensionality: the length the input signal is half the output -> n_features_out == 2 x n_features_in
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp'):
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance=False):
         super().__init__(in_features, fixed, base_matrix_builder)
 
         self.mode = mode
+        self.redundance = redundance
 
         self._imag = None
         self._real = None
@@ -107,7 +108,7 @@ class Fft1d(Spectral1dBase):
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
 
     def _create_weight_tensors(self):
-        X_base = self.base_matrix_builder(self.in_features)
+        X_base = self.base_matrix_builder(self.in_features, redundance=self.redundance, forward=True)
         T_real = torch.tensor(np.cos(X_base), dtype=torch.float32)
         T_imag = torch.tensor(np.sin(X_base), dtype=torch.float32)
         return T_real, T_imag
@@ -171,16 +172,17 @@ class iDctII1d(Spectral1dBase):
         return torch.tensor(X_i, dtype=torch.float32)
 
 
-class iFft1d(Spectral1dBase):
+class iDft1d(Spectral1dBase):
     """
-    Linear layer with weights initialized as inverse one dimensional discrete fast fourier transform.
+    Linear layer with weights initialized as inverse one dimensional discrete fourier transform.
     Dimensionality: the length of the input is double the size of the output -> n_features_in x 2 == n_features_out.
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=None, mode='complex'):
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='complex', redundance=False):
         super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder)
 
         self.mode = mode
+        self.redundance = redundance
 
         self._real = None
         self._imag = None
@@ -192,21 +194,15 @@ class iFft1d(Spectral1dBase):
         self.weights_imag = nn.Parameter(T_imag, requires_grad=self.requires_grad)
 
     def _create_weight_tensors(self):
+        if not self.redundance:
+            signal_out = 2*self.in_features
+        else:
+            signal_out = self.in_features
 
-        signal_length = self.in_features
-
-        n = np.arange(0, signal_length, 1, dtype=np.float32)
-        X = np.asmatrix(np.tile(n, (signal_length, 1)))
-        f = np.asmatrix(np.arange(0, signal_length, dtype=np.float32))
-        X_f = np.tile(f.T, (1, signal_length))
-
-        X = np.multiply(X, X_f)
-        X = X * ((2 * np.pi) / signal_length)
-
-        X_r = 1 / signal_length * np.cos(X)
-        X_i = 1 / signal_length * np.sin(X)
-
-        return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
+        X_base = self.base_matrix_builder(self.in_features, redundance=self.redundance, forward=False)
+        T_real = torch.tensor(1 / signal_out * np.cos(X_base), dtype=torch.float32)
+        T_imag = torch.tensor(1 / signal_out * np.sin(X_base), dtype=torch.float32)
+        return T_real, T_imag
 
     def _create_complex(self, input):
         self._amp   = input[:self.nrows]

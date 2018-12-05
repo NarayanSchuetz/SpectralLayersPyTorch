@@ -11,11 +11,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from .util import build_base_matrix_1d
 
 
 class Spectral2dBase(nn.Module):
 
-    def __init__(self, nrows, ncols, fixed):
+    def __init__(self, nrows, ncols, fixed, base_matrix_builder=None):
         """
         :param nrows: the number of rows of the 2d input (y dimension)
         :type nrows: int
@@ -28,6 +29,7 @@ class Spectral2dBase(nn.Module):
         self.nrows = nrows
         self.ncols = ncols
         self.requires_grad = not fixed
+        self.base_matrix_builder = base_matrix_builder
         self.register_parameter('bias', None)
 
     def extra_repr(self):
@@ -39,17 +41,18 @@ class Spectral2dBase(nn.Module):
         raise NotImplementedError
 
 
-class Fft2d(Spectral2dBase):
+class Dft2d(Spectral2dBase):
     """
     Linear layer with weights initialized as a two dimensional discrete fast fourier transform.
     Dimensionality: input is expected to be matrix-like with an x- and y-axis, the output will be the same along the
     x-axis but double the y-axis of the input -> input: n_x, n_y, output: n_x, 2 x n_y
     """
 
-    def __init__(self, nrows, ncols, fixed=False, mode='amp'):
-        super().__init__(nrows, ncols, fixed)
+    def __init__(self, nrows, ncols, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance = False):
+        super().__init__(nrows, ncols, fixed, base_matrix_builder)
 
         self.mode = mode
+        self.redundance = redundance
 
         self._amp = None
         self._phase = None
@@ -66,26 +69,16 @@ class Fft2d(Spectral2dBase):
         self.weights_imag2 = nn.Parameter(imag_tensor2, requires_grad=self.requires_grad)
 
     def _create_weight_tensors(self, signal_length):
-
-        n = np.arange(0, signal_length, 1, dtype=np.float32)
-        X = np.asmatrix(np.tile(n, (signal_length, 1)))
-        f = np.asmatrix(np.arange(0, signal_length, dtype=np.float32))
-        X_f = np.tile(f.T, (1, signal_length))
-
-        X = np.multiply(X, X_f)
-        X = X * ((-2 * np.pi) / signal_length)
-
-        X_r = np.cos(X)
-        X_i = np.sin(X)
-
-        return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
+        X_base = self.base_matrix_builder(signal_length, redundance=self.redundance, forward=True)
+        T_real = torch.tensor(np.cos(X_base), dtype=torch.float32)
+        T_imag = torch.tensor(np.sin(X_base), dtype=torch.float32)
+        return T_real, T_imag
 
     def _create_amplitude_phase(self):
         self._amp   = torch.sqrt(self._real ** 2 + self._imag ** 2)
         self._phase = torch.atan2(self._imag, self._real)
 
     def forward(self, input):
-
         c1 = F.linear(input, self.weights_real1)
         s1 = F.linear(input, self.weights_imag1)
 
@@ -93,10 +86,12 @@ class Fft2d(Spectral2dBase):
                     F.linear(torch.transpose(s1, -1, -2), self.weights_imag2)
 
         imag_part = F.linear(torch.transpose(c1, -1, -2), self.weights_imag2) + \
-                    F.linear(torch.transpose(s1, -1, -2), torch.transpose(self.weights_real2, -1, -2))
+                    F.linear(torch.transpose(s1, -1, -2), self.weights_real2)
 
         self._real = torch.transpose(real_part, -1, -2)
         self._imag = torch.transpose(imag_part, -1, -2)
+        print(self._real.shape)
+        print(self._imag.shape)
 
         if self.mode == 'complex':
             return torch.cat((self._real, self._imag), -1)
@@ -143,7 +138,7 @@ class DctII2d(Spectral2dBase):
         return F.linear(torch.transpose(x, -2, -1), self.weights_2)
 
 
-class iFft2d(Spectral2dBase):
+class iDft2d(Spectral2dBase):
     """
     NOTE: the forward call might be rather slow, so use this part with caution.
     Linear layer with weights initialized as two dimensional inverse discrete fast fourier transform.

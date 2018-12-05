@@ -10,7 +10,7 @@
 import numpy as np
 
 
-def build_base_matrix_1d(signal_length, redundance=False):
+def build_base_matrix_1d(signal_length, redundance=False, forward=True):
     """
     Helper function to create base matrix for the one dimensional case of multiple spectral transformations (naive
     sine, cosine and fft).
@@ -18,20 +18,39 @@ def build_base_matrix_1d(signal_length, redundance=False):
     :type signal_length: int
     :param redundance: Returns full DFT (True) or omits redundant part (False)
     :type redundance: bool
+    :param forward: choose forward (True) or backward (False) transformation
+    :type forward: bool
     :return: base matrix
     :rtype: np.matrix
     """
+
     if not redundance:
-        signal_out = signal_length // 2
+        # If the redundant parts are/were omitted, then weight matrix is not square,
+        # the dimension has to be adjusted through parameter 'coef'
+
+        if forward:
+            # In DFT, if redundant signal is omitted, length of signal is halfed
+            coef = 0.5
+        else:
+            # In iDFT, if redundant signal was omitted in DFT, when transforming back
+            # the resulting signal has to be the full length, again.
+            coef = 2
+
+        signal_out = int(signal_length * coef)
     else:
         signal_out = signal_length
+
     n = np.arange(0, signal_length, 1, dtype=np.float32)
     X = np.asmatrix(np.tile(n, (signal_out, 1)))
     f = np.asmatrix(np.arange(0, signal_out, dtype=np.float32))
     X_f = np.tile(f.T, (1, signal_length))
 
     X = np.multiply(X, X_f)
-    X = X * ((-2 * np.pi) / signal_length)
+
+    if forward:
+        X = X * ((-2 * np.pi) / signal_length)
+    else:
+        X = X * ((2 * np.pi) / signal_out)
 
     return X
 
