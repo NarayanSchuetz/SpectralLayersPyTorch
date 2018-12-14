@@ -39,6 +39,7 @@ def build_base_matrix_1d(signal_length, redundance=True, forward=True):
         signal_out = int(signal_length * coef)
     else:
         signal_out = signal_length
+        print('Full redundance')
 
     n = np.arange(0, signal_length, 1, dtype=np.float32)
     X = np.asmatrix(np.tile(n, (signal_out, 1)))

@@ -94,10 +94,10 @@ class Dft2d(Spectral2dBase):
         print(self._imag.shape)
 
         if self.mode == 'complex':
-            return torch.cat((self._real, self._imag), -1)
+            return torch.cat((self._real, self._imag), 1)
         elif self.mode == 'amp':
             self._create_amplitude_phase()
-            return torch.cat((self._amp, self._phase), -1)
+            return torch.cat((self._amp, self._phase), 1)
         else:
             raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
 
