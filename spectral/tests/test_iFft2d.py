@@ -7,14 +7,14 @@
 """
 from unittest import TestCase
 import torch
-from spectral import iFft2d
+from spectral import iDft2d
 
 
 class MockNN(torch.nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.ifft = iFft2d(10, 10, mode="amp")
+        self.ifft = iDft2d(10, 10, mode="amp")
 
     def forward(self, x):
         x = self.ifft(x)

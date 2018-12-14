@@ -75,7 +75,7 @@ class Dft2d(Spectral2dBase):
         return T_real, T_imag
 
     def _create_amplitude_phase(self):
-        self._amp   = torch.sqrt(self._real ** 2 + self._imag ** 2)
+        self._amp = torch.sqrt(self._real ** 2 + self._imag ** 2)
         self._phase = torch.atan2(self._imag, self._real)
 
     def forward(self, input):
@@ -128,7 +128,7 @@ class DctII2d(Spectral2dBase):
         X_f = np.tile(f.T, (1, signal_length))
 
         X = np.multiply(X, X_f)
-        X = X * ((np.pi) / signal_length)
+        X = X * (np.pi / signal_length)
 
         X_i = np.cos(X)
         return torch.tensor(X_i, dtype=torch.float32)
@@ -225,8 +225,8 @@ class iDctII2d(Spectral2dBase):
     def __init__(self, nrows, ncols, fixed=False):
         super().__init__(nrows, ncols, fixed)
 
-        self.weights_1 = nn.Parameter(self._create_weight_tensor(self.nrows))
-        self.weights_2 = nn.Parameter(self._create_weight_tensor(self.ncols))
+        self.weights_1 = nn.Parameter(self._create_weight_tensor(self.nrows), requires_grad=self.requires_grad)
+        self.weights_2 = nn.Parameter(self._create_weight_tensor(self.ncols), requires_grad=self.requires_grad)
 
     def _create_weight_tensor(self, signal_length):
 
