@@ -90,8 +90,6 @@ class Dft2d(Spectral2dBase):
 
         self._real = torch.transpose(real_part, -1, -2)
         self._imag = torch.transpose(imag_part, -1, -2)
-        print(self._real.shape)
-        print(self._imag.shape)
 
         if self.mode == 'complex':
             return torch.cat((self._real, self._imag), 1)
