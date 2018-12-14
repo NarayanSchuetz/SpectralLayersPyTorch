@@ -170,29 +170,31 @@ class iDft2d(Spectral2dBase):
         X_f = np.tile(f.T, (1, signal_length))
         X = np.multiply(X, X_f)
         X = X * ((2 * np.pi) / signal_length)
-        X_r = 1 / (self.nrows * self.ncols) * np.cos(X)
-        X_i = 1 / (self.nrows * self.ncols) * np.sin(X)
+        X_r = 1 / np.sqrt((self.nrows * self.ncols)) * np.cos(X)
+        X_i = 1 / np.sqrt((self.nrows * self.ncols)) * np.sin(X)
 
         return torch.tensor(X_r, dtype=torch.float32), torch.tensor(X_i, dtype=torch.float32)
 
-    def _create_complex(self, input):
-        self._amp = input[:,:,:,:self.nrows]
-        self._phase = input[:,:,:,self.nrows:]
+    def _create_complex(self, input, feat_num):
+        self._amp = input[:, :feat_num//2, :, :]
+        self._phase = input[:, feat_num//2:, :, :]
 
         self._real = self._amp * torch.cos(self._phase)
         self._imag = self._amp * torch.sin(self._phase)
         return True
 
     def forward(self, input):
-        if self.mode == 'amp':
-            self._create_complex(input)
-        elif self.mode == 'complex':
-            self._real = input[:,:,:,self.nrows]
-            self._imag = input[:,:,:,self.nrows:]
+        feat_num = input.shape[1]
+        if feat_num%2 != 0:
+            raise  IndexError("dimension should be even - half real/amp and half imag/phase")
 
+        if self.mode == 'amp':
+            self._create_complex(input, feat_num)
+        elif self.mode == 'complex':
+            self._real = input[:, :feat_num//2, :, :]
+            self._imag = input[:, feat_num//2:, :, :]
         else:
             raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
-
 
         c1_real = F.linear(self._real, self.weights_real_1)
         c1_imag = F.linear(self._imag, self.weights_real_1)
@@ -210,7 +212,7 @@ class iDft2d(Spectral2dBase):
                     F.linear(torch.transpose(c1_imag, -1, -2), self.weights_real_2) - \
                     F.linear(torch.transpose(s1_imag, -1, -2), self.weights_imag_2)
 
-        return torch.cat((torch.transpose(real_part, -1, -2), torch.transpose(imag_part, -1, -2)), -1)
+        return torch.cat((torch.transpose(real_part, -1, -2), torch.transpose(imag_part, -1, -2)), 1)
 
 
 class iDctII2d(Spectral2dBase):

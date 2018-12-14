@@ -178,7 +178,7 @@ class iDft1d(Spectral1dBase):
     Dimensionality: the length of the input is double the size of the output -> n_features_in x 2 == n_features_out.
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='complex', redundance=True):
+    def __init__(self, in_features, pos, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='complex', redundance=True):
         super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder)
 
         self.mode = mode
@@ -188,6 +188,8 @@ class iDft1d(Spectral1dBase):
         self._imag = None
         self._amp = None
         self._phase = None
+        self.pos1 = pos[0]
+        self.pos2 = pos[1]
 
         T_real, T_imag = self._create_weight_tensors()
         self.weights_real = nn.Parameter(T_real, requires_grad=self.requires_grad)
@@ -205,8 +207,8 @@ class iDft1d(Spectral1dBase):
         return T_real, T_imag
 
     def _create_complex(self, input):
-        self._amp   = input[:self.nrows]
-        self._phase = input[self.nrows:]
+        self._amp   = input[:, self.pos1, :, :]
+        self._phase = input[:, self.pos2, :, :]
 
         self._real = self._amp * torch.cos(self._phase)
         self._imag = self._amp * torch.sin(self._phase)
@@ -217,12 +219,12 @@ class iDft1d(Spectral1dBase):
         if self.mode == 'amp':
             self._create_complex(input)
         elif self.mode == 'complex':
-            self._real = input[:self.nrows]
-            self._imag = input[self.nrows:]
+            self._real = input[:, self.pos1, :, :]
+            self._imag = input[:, self.pos2, :, :]
         else:
             raise AttributeError("'mode' should be 'complex' or 'amp' while %s was found!" % str(self.mode))
 
         real_part = F.linear(self._real, self.weights_real) - F.linear(self._imag, self.weights_imag)
         imag_part = F.linear(self._real, self.weights_imag) + F.linear(self._imag, self.weights_real)
 
-        return torch.cat((real_part, imag_part), -1)
+        return torch.cat((real_part, imag_part), 1)
