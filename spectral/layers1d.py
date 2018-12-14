@@ -92,7 +92,7 @@ class Dft1d(Spectral1dBase):
         Dimensionality: the length the input signal is half the output -> n_features_out == 2 x n_features_in
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance=False):
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance=True):
         super().__init__(in_features, fixed, base_matrix_builder)
 
         self.mode = mode
@@ -178,7 +178,7 @@ class iDft1d(Spectral1dBase):
     Dimensionality: the length of the input is double the size of the output -> n_features_in x 2 == n_features_out.
     """
 
-    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='complex', redundance=False):
+    def __init__(self, in_features, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='complex', redundance=True):
         super(Spectral1dBase).__init__(in_features, fixed, base_matrix_builder)
 
         self.mode = mode

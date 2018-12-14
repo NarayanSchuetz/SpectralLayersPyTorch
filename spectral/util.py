@@ -10,7 +10,7 @@
 import numpy as np
 
 
-def build_base_matrix_1d(signal_length, redundance=False, forward=True):
+def build_base_matrix_1d(signal_length, redundance=True, forward=True):
     """
     Helper function to create base matrix for the one dimensional case of multiple spectral transformations (naive
     sine, cosine and fft).

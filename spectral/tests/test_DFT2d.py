@@ -7,23 +7,23 @@
 """
 from unittest import TestCase
 import torch
-from spectral import Dft1d
+from spectral import Dft2d
 
 class MockNN(torch.nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.dft = Dft1d(10, mode="amp")
+        self.dft = Dft2d(10, 10, mode="amp")
 
     def forward(self, x):
         x = self.dft(x)
         return x
 
 
-class TestIDft1d(TestCase):
+class TestIDft2d(TestCase):
 
     def test_full_pass(self):
-        test = torch.ones(2, 3, 10)
+        test = torch.ones(2, 3, 10, 10)
         net = MockNN()
         out = net(test)
         print(out.shape)

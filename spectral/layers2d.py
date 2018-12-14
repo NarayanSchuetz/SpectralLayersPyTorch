@@ -48,7 +48,7 @@ class Dft2d(Spectral2dBase):
     x-axis but double the y-axis of the input -> input: n_x, n_y, output: n_x, 2 x n_y
     """
 
-    def __init__(self, nrows, ncols, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance = False):
+    def __init__(self, nrows, ncols, fixed=False, base_matrix_builder=build_base_matrix_1d, mode='amp', redundance = True):
         super().__init__(nrows, ncols, fixed, base_matrix_builder)
 
         self.mode = mode
