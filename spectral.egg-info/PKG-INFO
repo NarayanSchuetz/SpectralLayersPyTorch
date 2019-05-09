@@ -1,7 +1,7 @@
 Metadata-Version: 1.0
 Name: spectral
-Version: 0.2
-Summary: PyTorch based trainable spectral linear layers
+Version: 0.984
+Summary: PyTorch NN based trainable spectral linear layers
 Home-page: UNKNOWN
 Author: Angela Botros & Narayan Schuetz
 Author-email: narayan.schuetz@artorg.unibe.ch

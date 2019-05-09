@@ -1,6 +1,8 @@
 spectral/__init__.py
 spectral/layers1d.py
 spectral/layers2d.py
+spectral/pooling.py
+spectral/util.py
 spectral.egg-info/PKG-INFO
 spectral.egg-info/SOURCES.txt
 spectral.egg-info/dependency_links.txt
