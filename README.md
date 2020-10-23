@@ -3,6 +3,12 @@ Trainable linear spectral layers for PyTorch
 
 Implements trainable spectral layers for PyTorch that can be initialized as 1-D & 2-D DCT and DFT transformations as shown in [paper](https://arxiv.org/abs/1911.05045).
 
+## Install
+The package can be installed as follows:
+
+    pip git+https://github.com/NarayanSchuetz/SpectralLayersPyTorch.git
+    
+
 ## Attribution
 
 ```
