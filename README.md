@@ -6,7 +6,7 @@ Implements trainable spectral layers for PyTorch that can be initialized as 1-D 
 ## Install
 The package can be installed as follows:
 
-    pip git+https://github.com/NarayanSchuetz/SpectralLayersPyTorch.git
+    pip install git+https://github.com/NarayanSchuetz/SpectralLayersPyTorch.git
     
 
 ## Attribution
